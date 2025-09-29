@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Funds Agentic (module, src on PYTHONPATH)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "funds_agentic.main",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "envFile": "${workspaceFolder}/.env",
+            "args": [
+                "--output",
+                "G:/My Drive/Investments/scraper",
+                "--input",
+                "G:/My Drive/Investments/Holdings/AllHoldings_Updated.xlsx",
+                "--graph-out",
+                "G:/My Drive/Investments/Github/funds-agentic/workspace/graph/graph.mmd",
+                "--graph-format", "mermaid"
+            ],
+            "justMyCode": true
+        }
+    ]
+}

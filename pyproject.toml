@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "funds-agentic"
+version = "0.1.0"
+description = "Trustnet funds monitor — agentic rewrite with LangGraph, Playwright, tenacity, and pandas"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{ include = "funds_agentic", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+# Orchestration
+langgraph = "^0.2.26"
+# Browser automation (sync API)
+playwright = "^1.47.0"
+# Data
+pandas = "^2.2.2"
+openpyxl = "^3.1.5"
+pyarrow = "^17.0.0"  # for Parquet
+# Resilience & config
+tenacity = "^9.0.0"
+python-dotenv = "^1.0.1"
+pydantic = "^2.9.2"
+pydantic-settings = "^2.4.0"
+# Google Sheets (optional input)
+gspread = "^6.1.4"
+google-auth = "^2.35.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+
+[tool.poetry.scripts]
+funds-agentic = "funds_agentic.main:cli"
+
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
