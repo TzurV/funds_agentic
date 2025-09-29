@@ -17,7 +17,7 @@ Copy `.env.example` → `.env` and fill Google credentials if you plan to read G
 # Excel input
 poetry run funds-agentic \
   --output "G:/My Drive/Investments/scraper" \
-  --input "G:/My Drive/Investments/Holdings/AllHoldings_Updated.xlsx"
+  --input "G:/My Drive/Holdings/AllHoldings.xlsx"
 
 # Google Sheet (share with your service account email)
 poetry run funds-agentic \
