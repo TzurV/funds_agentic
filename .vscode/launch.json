@@ -12,6 +12,12 @@
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
             "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src",
+                "HEADLESS": "0", // force headed
+                "PWDEBUG": "1", // if Playwright
+                "PLAYWRIGHT_VERBOSE": "1" // optional verbose logs
+            },
             "args": [
                 "--output",
                 "G:/My Drive/Investments/scraper",

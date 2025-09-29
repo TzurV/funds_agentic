@@ -101,28 +101,46 @@ def _scrape_one(ctx, url: str, timestamp: str, hold: bool, holding_pct, timeout_
 def funds_node(state: Dict[str, Any]) -> Dict[str, Any]:
     st = State.model_validate(state["state"])  # hydrate
     ctx = st.browser_ctx
+    max_retries = st.config.retries_per_url
 
     out: List[dict] = []
     failed: List[str] = []
 
     for rec in st.fund_rows:
         url = rec["url"]
-        try:
-            row = _scrape_one(
-                ctx=ctx,
-                url=url,
-                timestamp=st.meta.timestamp,
-                hold=rec.get("hold", False),
-                holding_pct=rec.get("holding_pct"),
-                timeout_sec=st.config.nav_timeout_sec,
-            )
-            out.append(row)
-            logger.info("fund_scraped", extra={
-                        "kv": {"step": "funds_node", "url": url, "status": "ok"}})
-        except Exception as e:
+        success = False
+
+        # Retry loop for each URL
+        for attempt in range(1, max_retries + 1):
+            try:
+                row = _scrape_one(
+                    ctx=ctx,
+                    url=url,
+                    timestamp=st.meta.timestamp,
+                    hold=rec.get("hold", False),
+                    holding_pct=rec.get("holding_pct"),
+                    timeout_sec=st.config.nav_timeout_sec,
+                )
+                out.append(row)
+                success = True
+                logger.info("fund_scraped", extra={
+                    "kv": {"step": "funds_node", "url": url, "status": "ok", "attempt": attempt}})
+                break  # Success, exit retry loop
+
+            except Exception as e:
+                if attempt < max_retries:
+                    # Not the last attempt, log and retry
+                    logger.warning("fund_retry", extra={
+                        "kv": {"step": "funds_node", "url": url, "attempt": attempt,
+                               "max_retries": max_retries, "reason": str(e)[:100]}})
+                else:
+                    # Last attempt failed
+                    logger.warning("fund_failed", extra={
+                        "kv": {"step": "funds_node", "url": url, "status": "failed",
+                               "attempts": max_retries, "reason": str(e)[:100]}})
+
+        if not success:
             failed.append(url)
-            logger.warning("fund_failed", extra={
-                           "kv": {"step": "funds_node", "url": url, "status": "failed", "reason": str(e)}})
 
     st.fund_rows_raw = out
     st.failed_urls = failed

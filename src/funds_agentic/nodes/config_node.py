@@ -20,14 +20,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--output", type=str, required=True,
                    help="Output directory")
     p.add_argument("--sheet", type=str, default="TrackingList")
-    p.add_argument("--row-start", type=int, default=3)
     p.add_argument("--col-url", type=str)
     p.add_argument("--col-hold", type=str)
     p.add_argument("--col-holding", type=str)
-    p.add_argument("--headless", type=lambda x: str(x).lower()
-                   != "false", default=True)
     p.add_argument("--retries-per-url", type=int, default=2)
     p.add_argument("--nav-timeout", type=int, default=20)
+    p.add_argument("--row-start", type=int, default=3,
+                   help="1-based row where the header row lives (e.g., 3 when headers are on row 3)")
+    headless = p.add_mutually_exclusive_group()
+    headless.add_argument("--headless", dest="headless",
+                          action="store_true", help="Run browser headless (default)")
+    headless.add_argument("--no-headless", dest="headless",
+                          action="store_false", help="Run browser with a visible window")
+    p.set_defaults(headless=True)
     return p
 
 
@@ -35,7 +40,7 @@ def config_node(_: dict) -> dict:
     """Create initial State with config + run metadata. Fails fast if invalid."""
     args = build_arg_parser().parse_args()
 
-    run_date = datetime.now().strftime("%Y-%m-%d")
+    run_date = datetime.now().strftime("%Y%m%d")
     timestamp = datetime.now().strftime("%d/%m/%y %H:%M")
     run_id = f"run-{int(time.time())}"
 

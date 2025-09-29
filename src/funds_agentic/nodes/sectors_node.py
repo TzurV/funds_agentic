@@ -13,6 +13,20 @@ logger = setup_logger()
 def _load_page(ctx, url: str, timeout_ms: int):
     page = ctx.new_page()
     page.goto(url, timeout=timeout_ms * 1000)
+    
+    # Check if T&C modal appeared on this new page and dismiss it
+    try:
+        modal = page.locator("#termsAndConditions")
+        if modal.count() > 0 and "show" in modal.get_attribute("class"):
+            # Modal is visible, dismiss it
+            page.locator("label[for='tc-check-Investor']").click()
+            page.wait_for_timeout(500)
+            page.locator("#tc-modal-agree").click()
+            page.wait_for_timeout(1000)
+            logger.info("Dismissed T&C modal on new page", extra={"kv": {"step": "sectors_node"}})
+    except Exception:
+        pass  # No modal or already dismissed
+    
     return page
 
 
@@ -65,27 +79,68 @@ def sectors_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # Page 1
     all_rows.extend(_extract_table_rows(page))
 
-    # Try pagination buttons with class .set-page
-    try:
-        buttons = page.locator(PAGINATION_BUTTONS)
-        pages = buttons.count()
-        for i in range(pages):
-            btn = buttons.nth(i)
-            label = btn.inner_text().strip()
-            # Skip current/disabled
-            if "disabled" in btn.get_attribute("class") or label == "1":
-                continue
-            try:
-                btn.click()
-                page.wait_for_timeout(500)  # brief wait
-                all_rows.extend(_extract_table_rows(page))
-            except Exception:
-                logger.warning("Pagination click failed", extra={
-                               "kv": {"step": "sectors_node", "page": label}})
-    except Exception:
-        pass
+    # Try pagination: iterate through pages 2, 3, etc.
+    current_page = 1
+    max_pages = 10  # safety limit
+    
+    while current_page < max_pages:
+        next_page = current_page + 1
+        
+        try:
+            # Scroll to bottom first (legacy pattern)
+            page.keyboard.press("End")
+            page.wait_for_timeout(1000)
+            
+            # Find all pagination buttons
+            all_buttons = page.locator(PAGINATION_BUTTONS).all()
+            target_button = None
+            
+            # Find button with matching page number text
+            for btn in all_buttons:
+                text = btn.inner_text().strip()
+                if text == str(next_page):
+                    target_button = btn
+                    break
+            
+            if target_button is None:
+                # No more pages
+                logger.info("No more pages", extra={
+                    "kv": {"step": "sectors_node", "page": next_page}})
+                break
+            
+            # Scroll the button to center of viewport (legacy pattern)
+            box = target_button.bounding_box()
+            if box:
+                # Calculate scroll position to center the button
+                viewport_height = page.viewport_size["height"]
+                scroll_to_y = box["y"] + (box["height"] / 2) - (viewport_height / 2)
+                page.evaluate(f"window.scrollBy(0, {scroll_to_y})")
+                page.wait_for_timeout(500)
+            
+            # Click the button with force to bypass any overlay issues
+            target_button.click(force=True)
+            page.wait_for_timeout(2000)  # Wait for table to reload
+            
+            # Extract rows from new page
+            new_rows = _extract_table_rows(page)
+            if len(new_rows) == 0:
+                logger.warning("No rows extracted", extra={
+                    "kv": {"step": "sectors_node", "page": next_page}})
+                break
+            
+            print(f"Page {next_page}: extracted {len(new_rows)} rows")
+            all_rows.extend(new_rows)
+            current_page = next_page
+            logger.info("Pagination success", extra={
+                "kv": {"step": "sectors_node", "page": next_page, "rows": len(new_rows)}})
+            
+        except Exception as e:
+            logger.warning("Pagination click failed", extra={
+                "kv": {"step": "sectors_node", "page": next_page, "reason": str(e)[:200]}})
+            break
 
     # Attach timestamp to each row
+    print(f"Total sectors extracted: {len(all_rows)}")
     for r in all_rows:
         r["date"] = st.meta.timestamp
 

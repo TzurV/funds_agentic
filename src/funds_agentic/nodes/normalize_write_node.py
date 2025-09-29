@@ -39,7 +39,7 @@ def _to_df_sectors(rows: List[dict]) -> pd.DataFrame:
 def _save_pair(df: pd.DataFrame, basepath: str) -> tuple[str, str]:
     csv_path = basepath + ".csv"
     parquet_path = basepath + ".parquet"
-    df.to_csv(csv_path, index=False, float_format="%.2f")
+    df.to_csv(csv_path, index=True, float_format="%.2f")
     df.to_parquet(parquet_path, index=False)
     return csv_path, parquet_path
 
