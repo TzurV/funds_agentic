@@ -63,10 +63,10 @@ def to_pct(v) -> float | None:
 
 def load_excel(path: str, sheet: str, row_start: int, overrides: Dict[str, Optional[str]]) -> List[Dict[str, Any]]:
     # "header=None" would treat first row as data; we want to preserve headers, so read normally
-    df = pd.read_excel(path, sheet_name=sheet, engine="openpyxl")
+    df = pd.read_excel(path, sheet_name=sheet, skiprows=max(0, row_start - 1), engine="openpyxl")
     # Drop rows before row_start (1-based indexing)
-    if row_start > 1:
-        df = df.iloc[row_start-1:].reset_index(drop=True)
+    # if row_start > 1:
+    #    df = df.iloc[row_start-1:].reset_index(drop=True)
     cols = resolve_columns(df, overrides)
 
     rows: List[Dict[str, Any]] = []

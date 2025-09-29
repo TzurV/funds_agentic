@@ -32,19 +32,21 @@ def load_gsheet(gsheet_url: Optional[str], gdrive_id: Optional[str], sheet: str,
     creds = _get_credentials()
     gc = gspread.authorize(creds)
 
-    if gsheet_url:
-        sh = gc.open_by_url(gsheet_url)
-    elif gdrive_id:
-        sh = gc.open_by_key(gdrive_id)
-    else:
-        raise ValueError("Either gsheet_url or gdrive_id must be provided")
-
+    sh = gc.open_by_url(
+        gsheet_url) if gsheet_url else gc.open_by_key(gdrive_id)
     ws = sh.worksheet(sheet)
-    data = ws.get_all_values()  # list of rows
+    data = ws.get_all_values()  # list of rows (each row is a list of cells)
+
     if not data:
         return []
-    # First row assumed headers; create DataFrame
-    headers, rows = data[0], data[1:]
+
+    # row_start is 1-based; convert to 0-based index for Python lists.
+    header_idx = max(0, row_start - 1)
+    if header_idx >= len(data):
+        return []  # nothing useful to read
+
+    headers = data[header_idx]
+    rows = data[header_idx + 1:]  # everything after the header
     df = pd.DataFrame(rows, columns=headers)
     if row_start > 1:
         # because our df starts after header
