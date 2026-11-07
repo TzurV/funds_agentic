@@ -1,0 +1,12 @@
+# Relative to this file: configuration -> project -> Github -> Investments.
+shared_root = "../../.."
+
+[scraper]
+input_path = "Holdings/AllHoldings_Updated.xlsx"
+output_dir = "scraper"
+sheet = "TrackingList"
+row_start = 3
+legacy_columns = true
+headless = true
+retries_per_url = 3
+nav_timeout_sec = 30

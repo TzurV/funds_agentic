@@ -16,3 +16,8 @@ __pycache__/
 *.pyo
 *.pyd
 
+
+# Machine-specific Drive runtimes and settings
+runtime/
+configuration/machines/*.local.toml
+.pytest_cache/

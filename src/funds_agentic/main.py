@@ -1,90 +1,29 @@
-# --- add at the top (new imports)
-import argparse
+"""CLI adapter; the application service also accepts Config directly."""
+from __future__ import annotations
+import json
 import sys
+from .config import build_parser, load_config
+from .inputs import load_inputs
+from .service import run
 
-from funds_agentic.graph import build_graph
-from funds_agentic.utils.logging_setup import setup_logger
-
-logger = setup_logger()
-
-
-def _parse_vis_args(argv):
-    """Parse ONLY the visualization flags and return (vis_args, remaining)."""
-    p = argparse.ArgumentParser(add_help=False)
-    p.add_argument("--graph-out", type=str, default=None)
-    p.add_argument("--graph-format", type=str,
-                   default="png", choices=["png", "mermaid"])
-    vis_args, remaining = p.parse_known_args(argv)
-    return vis_args, remaining
-
-
-def _save_graph_visual(app, out_path: str, fmt: str):
-    g = app.get_graph()
-    if fmt == "png":
-        # Mermaid PNG export (writes to file)
-        g.draw_mermaid_png(output_file_path=out_path)
-        logger.info("graph_exported", extra={
-                    "kv": {"path": out_path, "format": "png"}})
-    else:
-        # Mermaid text export
-        mermaid = g.draw_mermaid()  # returns Mermaid syntax as str
-        with open(out_path, "w", encoding="utf-8") as f:
-            f.write(mermaid)
-        logger.info("graph_exported", extra={
-                    "kv": {"path": out_path, "format": "mermaid"}})
-
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    try:
+        config = load_config(args)
+        if args.check:
+            records = load_inputs(config)
+            print(json.dumps({"status": "ready", "input_funds": len(records), "output_dir": str(config.output_dir)}, indent=2))
+            return 0
+        result = run(config)
+        print(result.model_dump_json(indent=2, exclude={"funds", "sectors"}))
+        return {"success": 0, "partial": 2, "failed": 1}[result.status]
+    except (ValueError, OSError) as exc:
+        print(f"Configuration/input error: {exc}", file=sys.stderr)
+        return 1
 
 def cli() -> None:
-    # 1) Parse & REMOVE visualization flags from argv
-    vis, remaining = _parse_vis_args(sys.argv[1:])
-    # <- remove vis flags so config_node won't see them
-    sys.argv = [sys.argv[0]] + remaining
-
-    # 2) Build compiled graph
-    app = build_graph()
-
-    # 3) Optionally save graph visualization before running
-    if vis.graph_out:
-        _save_graph_visual(app, vis.graph_out, vis.graph_format)
-
-    # 4) Run pipeline
-    result = app.invoke({})
-    state = result.get("state", {})
-
-    # 5) Clean up browser resources properly
-    browser_ctx = state.get("browser_ctx")
-    browser = state.get("browser")
-    playwright = state.get("playwright")
-
-    # Close in proper order: context -> browser -> playwright
-    if browser_ctx:
-        try:
-            browser_ctx.close()
-        except Exception:
-            pass  # Already closed or error, ignore
-
-    if browser:
-        try:
-            browser.close()
-        except Exception:
-            pass  # Already closed or error, ignore
-
-    if playwright:
-        try:
-            playwright.stop()
-        except Exception:
-            pass  # Already closed or error, ignore
-
-    # 6) Log completion
-    funds_csv = state.get("funds_csv_path")
-    sectors_csv = state.get("sectors_csv_path")
-    failed = state.get("failed_urls", [])
-    logger.info("run_complete", extra={"kv": {
-        "funds_csv": funds_csv,
-        "sectors_csv": sectors_csv,
-        "failed_urls": len(failed),
-    }})
-
+    raise SystemExit(main())
 
 if __name__ == "__main__":
     cli()

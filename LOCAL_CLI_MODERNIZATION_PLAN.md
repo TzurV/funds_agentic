@@ -2,7 +2,7 @@
 
 Date: 2026-11-07
 
-Status: Approved for implementation by the user on 2026-11-07. Implement the local CLI phase on the working branch; future suggestions remain outside scope.
+Status: Implemented and verified on the current Windows computer on 2026-11-07. Changes are on the working branch; setup and verification on other computers remain pending. Future suggestions remain outside scope.
 
 Baseline commit: `468526b` — Fix sector pagination and validation; clean up browser resources.
 
@@ -29,7 +29,7 @@ The first implementation and verification will take place on the current compute
 - Do not implement a ChatGPT integration or cloud service in this phase.
 - The user has agreed to begin implementation of this local CLI plan.
 
-## 3. Proposed defaults for agreement
+## 3. Implementation defaults
 
 - Keep Poetry and the current locked dependency versions initially, apart from removing unused dependencies associated with LangGraph and Parquet.
 - Preserve the current Excel workbook and Google Drive output locations through configuration; do not relocate user data as part of the refactor.
@@ -190,7 +190,7 @@ The phase is complete when the new CLI works on this computer, the relevant regr
 
 Cross-computer portability will be confirmed by an actual run on another computer when the user is ready. It will not be claimed as fully tested from the first computer alone.
 
-## 9. Proposed implementation order after agreement
+## 9. Implementation sequence
 
 1. Establish regression coverage for the confirmed parsing and input bugs.
 2. Introduce the portable configuration and machine-specific runtime setup here.
@@ -209,6 +209,25 @@ Cross-computer portability will be confirmed by an actual run on another compute
 - No automatic deletion of historical exports or the old environment.
 - No wholesale dependency upgrade or package-manager migration.
 - No replacement of Playwright until an alternative collection path has been demonstrated to work reliably.
+
+## 11. Implementation and verification record
+
+Verified on the current Windows computer on 2026-11-07:
+
+- The machine-specific application environment, Poetry tooling, and Playwright browsers were installed under the Google Drive project runtime directory. The old environment remains intact.
+- `run.bat --test -q`: 56 regression checks passed.
+- `run.bat --check`, launched from a different working directory, correctly loaded all 96 fund URLs.
+- A complete live run through the new launcher collected 96 funds and 55 unique IA sectors without collection errors. All 96 prices were populated.
+- IA Short Term Money Market, IA Sterling Strategic Bond, and IA Volatility Managed were present.
+- Independent CSV checks confirmed exact input coverage, legacy column order and index, representative source performance values, and consistency between snapshot files and compatibility exports.
+- Hidden unit-information grids, merged bid/offer cells, multiple share classes, and duplicate display names were verified. Factsheet links and Citicode selected the correct ETF listing rather than the identically named alternative.
+- Source-unavailable fields remain explicit: this run contained 20 missing FE risk scores and 10 missing quartiles, with field warnings retained in diagnostic metadata. Non-IA sectors and IA Unclassified are flagged as unavailable for comparison against the IA-only sector export.
+- The new environment has neither LangGraph nor PyArrow installed. Existing application dependency versions were retained while unused dependencies were removed.
+- No Parquet files were generated. Existing historical Parquet files were left untouched.
+- Validation exports are under `workspace/v2-final-verification/`; the normal scraper output folder was not overwritten.
+- Another-computer setup and live verification have not yet been performed. Follow the README's Windows setup steps when ready.
+
+The baseline tag and original main-branch code remain available for rollback. This phase does not add cloud hosting or a ChatGPT integration.
 
 ## Appendix A. Future suggestions — not authorized implementation scope
 
