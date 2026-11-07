@@ -50,6 +50,32 @@ def cli() -> None:
     # 4) Run pipeline
     result = app.invoke({})
     state = result.get("state", {})
+
+    # 5) Clean up browser resources properly
+    browser_ctx = state.get("browser_ctx")
+    browser = state.get("browser")
+    playwright = state.get("playwright")
+
+    # Close in proper order: context -> browser -> playwright
+    if browser_ctx:
+        try:
+            browser_ctx.close()
+        except Exception:
+            pass  # Already closed or error, ignore
+
+    if browser:
+        try:
+            browser.close()
+        except Exception:
+            pass  # Already closed or error, ignore
+
+    if playwright:
+        try:
+            playwright.stop()
+        except Exception:
+            pass  # Already closed or error, ignore
+
+    # 6) Log completion
     funds_csv = state.get("funds_csv_path")
     sectors_csv = state.get("sectors_csv_path")
     failed = state.get("failed_urls", [])

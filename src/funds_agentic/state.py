@@ -36,6 +36,8 @@ class State(BaseModel):
 
     # browser
     browser_ctx: Any | None = None  # Playwright BrowserContext
+    browser: Any | None = None  # Playwright Browser
+    playwright: Any | None = None  # Playwright sync_playwright instance
     consent_done: bool = False
 
     # data in-memory

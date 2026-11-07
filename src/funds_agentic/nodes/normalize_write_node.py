@@ -29,6 +29,11 @@ def _to_df_funds(rows: List[dict]) -> pd.DataFrame:
 
 
 def _to_df_sectors(rows: List[dict]) -> pd.DataFrame:
+    if not rows:
+        raise ValueError("Cannot export empty sector data")
+    names = [str(row.get("sectorName") or "").strip() for row in rows]
+    if any(not name for name in names) or len(names) != len(set(names)):
+        raise ValueError("Cannot export blank or duplicate sector names")
     df = pd.DataFrame(rows)
     for c in SECTORS_COLUMNS:
         if c not in df.columns:

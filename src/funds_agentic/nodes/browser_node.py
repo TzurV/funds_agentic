@@ -22,7 +22,8 @@ def _maybe_click(page, selector: str, name: str):
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=0.5, max=8))
-def _launch_context(headless: bool) -> BrowserContext:
+def _launch_context(headless: bool) -> tuple[BrowserContext, Any, Any]:
+    """Launch browser and return (context, browser, playwright) for proper cleanup."""
     p = sync_playwright().start()
     browser = p.chromium.launch(headless=headless)
     ctx = browser.new_context()
@@ -32,13 +33,15 @@ def _launch_context(headless: bool) -> BrowserContext:
     _maybe_click(page, COOKIE_ALLOW_ALL, "cookie_allow_all")
     _maybe_click(page, INVESTOR_LABEL, "investor_private")
     _maybe_click(page, AGREE_BUTTON, "agree_terms")
-    return ctx
+    return ctx, browser, p
 
 
 def browser_node(state: Dict[str, Any]) -> Dict[str, Any]:
     st = State.model_validate(state["state"])  # hydrate
-    ctx = _launch_context(st.config.headless)
+    ctx, browser, playwright = _launch_context(st.config.headless)
     st.browser_ctx = ctx
+    st.browser = browser
+    st.playwright = playwright
     st.consent_done = True
     logger.info("Browser ready", extra={"kv": {
         "step": "browser_node",

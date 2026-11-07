@@ -8,7 +8,7 @@ AGREE_BUTTON = "#tc-modal-agree"
 
 # Sector performance page
 SECTORS_URL = "https://www.trustnet.com/fund/sectors/performance?universe=O"
-SECTORS_TABLE_CONTAINER = ".table-responsive"
+SECTORS_TABLE_CONTAINER = "#sector-perf-table-pills-cumula-perf .table-responsive"
 SECTORS_HEADER_TOKEN = "Name"  # the header text that identifies the table we need
 PAGINATION_BUTTONS = ".set-page"
 
